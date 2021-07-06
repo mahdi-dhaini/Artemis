@@ -175,8 +175,11 @@ public class ProgrammingExerciseParticipationService {
     private <T extends ProgrammingExerciseParticipation> boolean canAccessParticipation(@NotNull T participation, JpaRepository<T, Long> repository, User user) {
         // Note: if this participation was retrieved as Participation (abstract super class) from the database, the programming exercise might not be correctly initialized
         // To prevent null pointer exceptions, we therefore retrieve it again as concrete sub-class instance by using the provided repository
-        if (participation.getProgrammingExercise() == null || !Hibernate.isInitialized(participation.getProgrammingExercise())) {
-            participation.setProgrammingExercise(repository.findById(participation.getId()).get().getProgrammingExercise());
+        var programmingExercise = participation.getProgrammingExercise();
+        if (programmingExercise == null || !Hibernate.isInitialized(programmingExercise)) {
+            Optional<T> optional = repository.findById(participation.getId());
+            programmingExercise = optional.orElseThrow().getProgrammingExercise();
+            participation.setProgrammingExercise(programmingExercise);
         }
         return authCheckService.isAtLeastTeachingAssistantForExercise(participation.getProgrammingExercise(), user);
     }
